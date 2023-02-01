@@ -1,11 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<p>
-    тут будеть контакты
-</p> 
-<a href="{% url 'main-page'%}">На главную</a>
-<a href="{% url 'about-page' %}">о нас</a>
-
+    <h2>Контакты</h2>
+    <a href="{% url 'about-page' %}">О нас</a>
+    <a href="{% url 'main-page' %}">На главную</a>
 {% endblock %}

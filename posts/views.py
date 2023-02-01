@@ -1,8 +1,9 @@
-from django.http import HttpResponse
-from django.shortcuts import render
-from posts.models import Post
+from django.http import HttpResponse, Http404
+from django.shortcuts import render, redirect
+from posts.models import Post, Comment
 from django.views import generic
 from django.urls import reverse_lazy
+from posts.forms import CommentForm
 
 
 class IndexView(generic.ListView):
@@ -12,20 +13,53 @@ class IndexView(generic.ListView):
     extra_context = {"title": "Главная страница"}
     template_name = "index.html"
 
+
 class PostDetailView(generic.DetailView):
     model = Post
-    context_object_name = 'post'
+    context_object_name = "post"
     template_name = "post_detail.html"
+    extra_context = {"form": CommentForm()}
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context["form"] = CommentForm()
+    #     return context
+
+    def post(self, request, pk):
+        post = Post.objects.get(pk=pk)
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            pre_saved_comment = form.save(commit=False)
+            pre_saved_comment.post = post
+            pre_saved_comment.save()
+
+        return redirect("post-detail", pk)
+
+
+    # def post(self, request, pk):
+    #     post = Post.objects.get(pk=pk)
+    #     name = request.POST.get("name", None)
+    #     text = request.POST.get("text", None)
+    #
+    #     if name and text:
+    #         comment = Comment.objects.create(name=name, text=text, post=post)
+    #         comment.save()
+    #
+    #     return redirect("post-detail", pk)
+
 
 class PostCreateView(generic.CreateView):
-    model= Post
+    model = Post
     template_name = "post_create.html"
     fields = ["title", "content"]
     success_url = reverse_lazy("main-page")
 
+
 class PostDeleteView(generic.DeleteView):
     model = Post
     success_url = reverse_lazy("main-page")
+
 
 class PostUpdateView(generic.UpdateView):
     model = Post
@@ -33,19 +67,13 @@ class PostUpdateView(generic.UpdateView):
     fields = ["title", "content"]
     success_url = reverse_lazy("main-page")
 
-# Create your views here.
-def hello (request):
-    return HttpResponse('GeekTech')
 
-def index (request):
-    posts = Post.objects.all()
-    context = {
-        "title": "Главна страница",
-        "posts": posts
-      
-    }
-    return render(request, "index.html",context)
-
+# def get_post(request, post_id):
+#     try:
+#         post = Post.objects.get(id=post_id)
+#     except Post.DoesNotExist:
+#         raise Http404("Такого поста нет!")
+#     return render(request, "post_detail.html", {"post": post})
 
 def about(request):
     context = {
@@ -56,6 +84,6 @@ def about(request):
 
 def contacts(request):
     context = {
-        "title": " контакты",
-    }   
-    return render (request, "contacts.html" , context)
+        "title": "Контакты",
+    }
+    return render(request, "contacts.html", context)
